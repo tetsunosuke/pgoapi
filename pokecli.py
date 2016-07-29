@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 pgoapi - Pokemon Go API
 Copyright (c) 2016 tjado <https://github.com/tejado>
@@ -31,6 +32,8 @@ import pprint
 import logging
 import argparse
 import getpass
+import traceback
+import requests
 
 # add directory of this file to PATH, so that the package will be found
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
@@ -165,5 +168,89 @@ def main():
     # alternative:
     # api.get_player().get_inventory().get_map_objects().download_settings(hash="05daf51635c82611d1aac95c0b051d3ec088a930").call()
 
+def poke_id2name(id):
+    url = "https://raw.githubusercontent.com/giginet/pokedex/master/dex/dex{0}.json".format(id)
+    r = requests.get(url)
+    """
+    return {
+        'image_url': "http://www.serebii.net/pokemongo/pokemon/{0:03d}.png".format(id),
+        'name': r.json()['name']
+    }
+    """
+    return r.json()["name"]
+
+def nomore(pokemon):
+    # 84: ドードー, 41: ズバット はもういらない
+    list = [
+        13, # ビードル
+        16, # ポッポ
+        21, # オニスズメ
+        41, # ズバット
+        84, # ドードー
+    ]
+    return pokemon["pokemon_id"] in list
+
+def weaker(pokemon):
+    # Cpが一定以下はいらん
+    return pokemon["cp"] < 150
+    
+    
+    
+def my_main():
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
+    # log level for http request class
+    logging.getLogger("requests").setLevel(logging.WARNING)
+    # log level for main pgoapi class
+    logging.getLogger("pgoapi").setLevel(logging.INFO)
+    # log level for internal pgoapi class
+    logging.getLogger("rpc_api").setLevel(logging.INFO)
+
+    config = init_config()
+    if not config:
+        return
+    position = util.get_pos_by_name(config.location)
+    if not position:
+        log.error('Position could not be found by name')
+        return
+        
+    if config.test:
+        return
+
+    # instantiate pgoapi
+    api = pgoapi.PGoApi()
+    api.set_position(*position)
+    if not api.login(config.auth_service, config.username, config.password):
+        return
+
+    api.get_inventory()
+
+    # execute the RPC call
+    response_dict = api.call()
+    with open("response.json", "w") as f:
+        json.dump(response_dict,f)
+    inventory_items =  response_dict["responses"]["GET_INVENTORY"]["inventory_delta"]["inventory_items"]
+    my_pokemons = {}
+    for item in inventory_items:
+        try:
+            if item["inventory_item_data"].has_key("pokemon_data"):
+                pokemon_data = item["inventory_item_data"]["pokemon_data"]
+                if pokemon_data.has_key("pokemon_id"):
+                    log.debug("id=%s, name=%s, cp=%s", pokemon_data["pokemon_id"], poke_id2name(pokemon_data["pokemon_id"]), pokemon_data["cp"])
+                    if my_pokemons.has_key(pokemon_data["pokemon_id"]):
+                        my_pokemons[pokemon_data["pokemon_id"]].append(pokemon_data)
+                    else:
+                        my_pokemons[pokemon_data["pokemon_id"]] = [pokemon_data]
+                    #if weaker(pokemon_data) or nomore(pokemon_data):
+                    #    api.release_pokemon(pokemon_id = pokemon_data["id"])
+                    #    dict = api.call()
+                    #    time.sleep(3)
+                      
+        except:
+            traceback.print_exc()
+    #log.info(my_pokemons)
+    with open("pokemons.json", "w") as f:
+        json.dump(my_pokemons,f) 
+
 if __name__ == '__main__':
-    main()
+    #main()
+    my_main()
