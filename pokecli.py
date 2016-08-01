@@ -34,6 +34,7 @@ import argparse
 import getpass
 import traceback
 import requests
+import time
 
 # add directory of this file to PATH, so that the package will be found
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
@@ -182,17 +183,23 @@ def poke_id2name(id):
 def nomore(pokemon):
     # 84: ドードー, 41: ズバット はもういらない
     list = [
+        10, # キャタピー
         13, # ビードル
         16, # ポッポ
+        17, # ピジョン
+        19, # コラッタ
         21, # オニスズメ
         41, # ズバット
+        69, # マダツボミ
         84, # ドードー
+        102, # タマタマ
+        120, # ヒトデマン
     ]
     return pokemon["pokemon_id"] in list
 
 def weaker(pokemon):
     # Cpが一定以下はいらん
-    return pokemon["cp"] < 150
+    return pokemon["cp"] < 199
     
     
     
@@ -235,21 +242,30 @@ def my_main():
             if item["inventory_item_data"].has_key("pokemon_data"):
                 pokemon_data = item["inventory_item_data"]["pokemon_data"]
                 if pokemon_data.has_key("pokemon_id"):
-                    log.debug("id=%s, name=%s, cp=%s", pokemon_data["pokemon_id"], poke_id2name(pokemon_data["pokemon_id"]), pokemon_data["cp"])
+                    #log.debug("id=%s, name=%s, cp=%s", pokemon_data["pokemon_id"], poke_id2name(pokemon_data["pokemon_id"]), pokemon_data["cp"])
                     if my_pokemons.has_key(pokemon_data["pokemon_id"]):
                         my_pokemons[pokemon_data["pokemon_id"]].append(pokemon_data)
                     else:
                         my_pokemons[pokemon_data["pokemon_id"]] = [pokemon_data]
-                    #if weaker(pokemon_data) or nomore(pokemon_data):
-                    #    api.release_pokemon(pokemon_id = pokemon_data["id"])
-                    #    dict = api.call()
-                    #    time.sleep(3)
                       
         except:
             traceback.print_exc()
     #log.info(my_pokemons)
     with open("pokemons.json", "w") as f:
         json.dump(my_pokemons,f) 
+
+    # 保持しているデータを処理
+    for id in my_pokemons:
+        owns = my_pokemons[id]
+        for pokemon in owns:
+            if pokemon.has_key("favorite"):
+                log.debug(poke_id2name(id))
+                continue
+            if weaker(pokemon) or nomore(pokemon):
+                api.release_pokemon(pokemon_id = pokemon["pokemon_id"])
+                dict = api.call()
+                time.sleep(3)
+
 
 if __name__ == '__main__':
     #main()
