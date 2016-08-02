@@ -139,6 +139,8 @@ def main():
     timestamps = [0,] * len(cell_ids)
     api.get_map_objects(latitude = position[0], longitude = position[1], since_timestamp_ms = timestamps, cell_id = cell_ids)
     response_dict = api.call()
+    with open("forts.json", "w") as f:
+            json.dump(response_dict,f, indent=4, sort_keys=True)
     fort = response_dict["responses"]["GET_MAP_OBJECTS"]["map_cells"][0]["forts"][0]
 
     # spin a fort
