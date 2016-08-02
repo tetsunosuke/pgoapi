@@ -192,6 +192,7 @@ def nomore(pokemon):
         41, # ズバット
         69, # マダツボミ
         84, # ドードー
+        85, # ドードリオ
         102, # タマタマ
         120, # ヒトデマン
     ]
@@ -262,7 +263,7 @@ def my_main():
                 log.debug(poke_id2name(id))
                 continue
             if weaker(pokemon) or nomore(pokemon):
-                api.release_pokemon(pokemon_id = pokemon["pokemon_id"])
+                api.release_pokemon(pokemon_id = pokemon["id"])
                 dict = api.call()
                 time.sleep(3)
 
