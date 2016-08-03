@@ -234,8 +234,8 @@ def my_main():
 
     # execute the RPC call
     response_dict = api.call()
-    with open("response.json", "w") as f:
-        json.dump(response_dict,f)
+    with open("inventory.json", "w") as f:
+        json.dump(response_dict,f, indent=4, sort_keys=True)
     inventory_items =  response_dict["responses"]["GET_INVENTORY"]["inventory_delta"]["inventory_items"]
     my_pokemons = {}
     for item in inventory_items:
@@ -253,7 +253,7 @@ def my_main():
             traceback.print_exc()
     #log.info(my_pokemons)
     with open("pokemons.json", "w") as f:
-        json.dump(my_pokemons,f) 
+        json.dump(my_pokemons,f, indent=4, sort_keys=True)
 
     # 保持しているデータを処理
     for id in my_pokemons:

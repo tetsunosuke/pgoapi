@@ -163,6 +163,8 @@ def main():
             json.dump(response_dict,f, indent=4, sort_keys=True)
         if not response_dict["responses"].has_key("FORT_DETAILS"):
             print "failed"
+            with open("fail_fort.json", "w") as f:
+                json.dump(fort, f, indent=4, sort_keys=True)
             return
 
         detailed = response_dict["responses"]["FORT_DETAILS"]
