@@ -140,7 +140,7 @@ def main():
     api.get_map_objects(latitude = position[0], longitude = position[1], since_timestamp_ms = timestamps, cell_id = cell_ids)
     response_dict = api.call()
     with open("forts.json", "w") as f:
-            json.dump(response_dict,f, indent=4, sort_keys=True)
+        json.dump(response_dict,f, indent=4, sort_keys=True)
     fort = response_dict["responses"]["GET_MAP_OBJECTS"]["map_cells"][0]["forts"][0]
 
     # spin a fort
@@ -150,17 +150,26 @@ def main():
     #lat = <your latitude>
     #api.fort_search(fort_id=fortid, fort_latitude=lat, fort_longitude=lng, player_latitude=f2i(position[0]), player_longitude=f2i(position[1]))
     if fort["enabled"]:
+        if fort.has_key("cooldown_complete_timestamp_ms"):
+            if fort["cooldown_complete_timestamp_ms"] > response_dict["responses"]["GET_MAP_OBJECTS"]["map_cells"][0]["current_timestamp_ms"]:
+                return
         fortid = fort["id"]
         lng = fort["longitude"]
         lat = fort["latitude"]
         api.fort_details(fort_id=fortid, latitude=lat, longitude=lng)
         #, player_latitude=util.f2i(position[0]), player_longitude=util.f2i(position[1]))
         response_dict = api.call()
+        with open("fort_details.json", "w") as f:
+            json.dump(response_dict,f, indent=4, sort_keys=True)
+        if not response_dict["responses"].has_key("FORT_DETAILS"):
+            print "failed"
+            return
+
         detailed = response_dict["responses"]["FORT_DETAILS"]
         api.fort_search(fort_id=detailed["fort_id"], fort_latitude=detailed["latitude"], fort_longitude=detailed["longitude"], player_latitude=util.f2i(position[0]), player_longitude=util.f2i(position[1]))
         time.sleep(1)
         response_dict = api.call()
-        with open("result.json", "w") as f:
+        with open("fort_search.json", "w") as f:
             json.dump(response_dict,f, indent=4, sort_keys=True)
 
     # release/transfer a pokemon and get candy for it
