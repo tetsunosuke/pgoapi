@@ -86,6 +86,8 @@ class PGoApi:
         if func.upper() in  RequestType.keys():
             return function
         else:
+            print func.upper()
+            print RequestType.keys()
             raise AttributeError
         
     def login(self, provider, username, password, lat = None, lng = None, alt = None, app_simulation = True):

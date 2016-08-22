@@ -49,7 +49,7 @@ log = logging.getLogger(__name__)
 def init_config():
     parser = argparse.ArgumentParser()
     config_file = "config_bot.json"
-    config_file = "config.json"
+    #config_file = "config.json"
 
     # If config file exists, load variables from json
     load   = {}
@@ -135,13 +135,15 @@ def main():
     # get map objects call
     # repeated fields (e.g. cell_id and since_timestamp_ms in get_map_objects) can be provided over a list
     # ----------------------
-    cell_ids = util.get_cell_ids(position[0], position[1])
+    #cell_ids = util.get_cell_ids(position[0], position[1])
+    cell_ids = get_cell_ids(position[0], position[1])
     timestamps = [0,] * len(cell_ids)
-    api.get_map_objects(latitude = position[0], longitude = position[1], since_timestamp_ms = timestamps, cell_id = cell_ids)
-    response_dict = api.call()
+    response_dict = api.get_map_objects(latitude = position[0], longitude = position[1], since_timestamp_ms = timestamps, cell_id = cell_ids)
+    #response_dict = api.call()
     with open("forts.json", "w") as f:
         json.dump(response_dict,f, indent=4, sort_keys=True)
     fort = response_dict["responses"]["GET_MAP_OBJECTS"]["map_cells"][0]["forts"][0]
+    #cells_0 = response_dict["responses"]["GET_MAP_OBJECTS"]["map_cells"][0]
 
     # spin a fort
     # ----------------------
@@ -156,9 +158,9 @@ def main():
         fortid = fort["id"]
         lng = fort["longitude"]
         lat = fort["latitude"]
-        api.fort_details(fort_id=fortid, latitude=lat, longitude=lng)
+        response_dict = api.fort_details(fort_id=fortid, latitude=lat, longitude=lng)
         #, player_latitude=util.f2i(position[0]), player_longitude=util.f2i(position[1]))
-        response_dict = api.call()
+        #response_dict = api.call()
         with open("fort_details.json", "w") as f:
             json.dump(response_dict,f, indent=4, sort_keys=True)
         if not response_dict["responses"].has_key("FORT_DETAILS"):
@@ -168,9 +170,9 @@ def main():
             return
 
         detailed = response_dict["responses"]["FORT_DETAILS"]
-        api.fort_search(fort_id=detailed["fort_id"], fort_latitude=detailed["latitude"], fort_longitude=detailed["longitude"], player_latitude=util.f2i(position[0]), player_longitude=util.f2i(position[1]))
+        response_dict = api.fort_search(fort_id=detailed["fort_id"], fort_latitude=detailed["latitude"], fort_longitude=detailed["longitude"], player_latitude=util.f2i(position[0]), player_longitude=util.f2i(position[1]))
         time.sleep(1)
-        response_dict = api.call()
+        #response_dict = api.call()
         with open("fort_search.json", "w") as f:
             json.dump(response_dict,f, indent=4, sort_keys=True)
 
@@ -259,10 +261,10 @@ def my_main():
     if not api.login(config.auth_service, config.username, config.password):
         return
 
-    api.get_inventory()
+    response_dict = api.get_inventory()
 
     # execute the RPC call
-    response_dict = api.call()
+    #response_dict = api.call()
     with open("response.json", "w") as f:
         json.dump(response_dict,f, indent=4, sort_keys=True)
     inventory_items =  response_dict["responses"]["GET_INVENTORY"]["inventory_delta"]["inventory_items"]
@@ -292,9 +294,27 @@ def my_main():
                 log.debug(poke_id2name(id))
                 continue
             if weaker(pokemon) or nomore(pokemon):
-                api.release_pokemon(pokemon_id = pokemon["id"])
-                dict = api.call()
+                dict = api.release_pokemon(pokemon_id = pokemon["id"])
+                #dict = api.call()
                 time.sleep(3)
+
+from s2sphere import Cell, CellId, LatLng
+
+def get_cell_ids(lat, long, radius = 10):
+    origin = CellId.from_lat_lng(LatLng.from_degrees(lat, long)).parent(15)
+    walk = [origin.id()]
+    right = origin.next()
+    left = origin.prev()
+
+    # Search around provided radius
+    for i in range(radius):
+        walk.append(right.id())
+        walk.append(left.id())
+        right = right.next()
+        left = left.prev()
+
+    # Return everything
+    return sorted(walk)
 
 
 if __name__ == '__main__':

@@ -151,26 +151,32 @@ def poke_id2name(id):
     return r.json()["name"]
 
 def nomore(pokemon):
-    # 84: ドードー, 41: ズバット はもういらない
     list = [
         10, # キャタピー
+        11, # トランセル
         13, # ビードル
+        14, # コクーン
         16, # ポッポ
         17, # ピジョン
+        18, # ピジョット
         19, # コラッタ
+        20, # ラッタ
         21, # オニスズメ
+        35, # ピッピ
         41, # ズバット
+        42, # ゴルバッド
         69, # マダツボミ
         84, # ドードー
         85, # ドードリオ
         102, # タマタマ
         120, # ヒトデマン
+        127, # カイロス
     ]
     return pokemon["pokemon_id"] in list
 
 def weaker(pokemon):
     # Cpが一定以下はいらん
-    return pokemon["cp"] < 199
+    return pokemon["cp"] < 500
     
     
     
@@ -200,10 +206,9 @@ def my_main():
     if not api.login(config.auth_service, config.username, config.password):
         return
 
-    api.get_inventory()
+    response_dict = api.get_inventory()
 
     # execute the RPC call
-    response_dict = api.call()
     with open("inventory.json", "w") as f:
         json.dump(response_dict,f, indent=4, sort_keys=True)
     inventory_items =  response_dict["responses"]["GET_INVENTORY"]["inventory_delta"]["inventory_items"]
@@ -233,9 +238,8 @@ def my_main():
                 log.debug(poke_id2name(id))
                 continue
             if weaker(pokemon) or nomore(pokemon):
-                api.release_pokemon(pokemon_id = pokemon["id"])
-                dict = api.call()
                 time.sleep(3)
+                dict = api.release_pokemon(pokemon_id = pokemon["id"])
 
 
 if __name__ == '__main__':
